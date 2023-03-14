@@ -18,8 +18,7 @@ class Node {
     }
 };
 void inorder(Node *currentPtr);
-Node* insert(Node *root,
-                         Node *element);
+Node* insert(Node *root,Node *element);
 int add(Node *currentPtr);
 int find(Node *currentPtr, int val);
 Node* parent(Node *root, Node *node);
@@ -271,12 +270,29 @@ int menu() {
   cin>> ans;
   return ans;
 }
-
+//Move to the next node
 Node* Next(Node *root, Node *node){
-  if (node->right == NULL) return LeftDescendant(node->right);
-  else return RightAncestor(root, node);
+  if (node == nullptr) {
+    return nullptr;
+  }
+
+  // If the right subtree is not NULL, return the leftmost node
+  // in the right subtree.
+  if (node->right != nullptr) {
+    return minVal(node->right);
+  }
+
+  // If the right subtree is NULL, we need to find the closest
+  // ancestor for which node is in the left subtree.
+  Node *parentNode = parent(root, node);
+  while (parentNode != nullptr && node == parentNode->right) {
+    node = parentNode;
+    parentNode = parent(root, node);
+  }
+  return parentNode;
 }
 
+//Insert node
 void AVLInsert(int k, Node* root, Node* node){
   Node *N, *temp;
   temp = new Node(k);
@@ -284,9 +300,18 @@ void AVLInsert(int k, Node* root, Node* node){
   N = FindSearch(k, node);
   Rebalance(root, N);
 }
+//Determine the Height of the node
 int ComputeHeight(Node *node){
-  return node->height;
+    if (node == NULL) {
+    return -1;
+  }
+  else {
+    int left_height = ComputeHeight(node->left);
+    int right_height = ComputeHeight(node->right);
+    return 1 + max(left_height, right_height);
+  }
 }
+//Rotate the tree to the right
 void RotateRight(Node* node){
   Node *L, *R;
   L = node->left;
@@ -294,6 +319,7 @@ void RotateRight(Node* node){
   L->right = node;
   node->left = R;
 }
+//Rotate teh tree to the left
 void RotateLeft(Node* node){
   Node *L, *R;
   L = node->left;
@@ -302,8 +328,14 @@ void RotateLeft(Node* node){
   node->right = L;
 }
 void ComputerBF(Node* node){
-  
+  int left_height = (node->left == NULL) ? -1 : node->left->height;
+  int right_height = (node->right == NULL) ? -1 : node->right->height;
+  node->height = 1 + max(left_height, right_height);
+  int bf = left_height - right_height;
+  cout << "Balance factor for node " << node->data << " is " << bf << endl;
 }
+
+//Rebalance the tree
 void Rebalance(Node *root, Node *node){
   Node *P;
   P = parent(root, node);
@@ -312,9 +344,11 @@ void Rebalance(Node *root, Node *node){
   AdjustHeight(node);
   if (!(P == NULL)) Rebalance(root, node);
 }
+//Increase Height by one
 void AdjustHeight(Node* node){
   node->height = 1+ max(node->left->height, node->right->height);
 }
+//Rebalance the Right side of the Tree
 void RebalanceRight(Node* node){
   Node *M;
   M = node->left;
@@ -322,6 +356,7 @@ void RebalanceRight(Node* node){
   RotateRight(node);
   AdjustHeight(node);
 }
+//Rebalance the Left side of the Tree
 void RebalanceLeft(Node* node){
   Node *M;
   M = node->right;
@@ -329,23 +364,28 @@ void RebalanceLeft(Node* node){
   RotateLeft(node);
   AdjustHeight(node);
 }
+//What is the Left Descendant of the node
 Node* LeftDescendant(Node* node){
   if (node->left == NULL) return node;
   else return LeftDescendant(node->left);
 }
+//What is the Right Ancestor of the node
 Node* RightAncestor(Node* root, Node* node){
   if (node->data < parent(root, node)->data) return parent(root, node);
   else return RightAncestor(root, parent(root, node));
 }
+//Find a node
 Node* FindSearch(int k, Node* node){
   if ((node->data = k)) return node;
   else if (node->data > k) return FindSearch(k, node->left);
   else if (node->data < k) return FindSearch(k, node->right);
 }
+//Is the function unbalanced?
 bool IsUnbalance(Node* node){
   if (node->left->height == node->right->height) return true;
   else return false;
 }
+//Delete a node
 void AVLDelete(Node *root, Node* node){
   Node *M;
   delete(node);
@@ -355,12 +395,12 @@ void AVLDelete(Node *root, Node* node){
 
 int main() {
   Node *myRoot=NULL, *tempNode;
-  int done = 0,ans=1, val, q6data;
+  int done = 0,ans=1, val, val2;
   ans = menu();
-  while (ans<8) {
+  while (ans<10) {
     if (ans == 1) {
       // Get value to insert.
-      cout<<"What value would you like to insert?";
+      cout<<"What value would you like to insert? ";
       cin>>val;
       tempNode = new Node(val); // Create the node.
       // Insert the value.
@@ -383,23 +423,88 @@ int main() {
       else
         cout<<" Did not find %d in the tree.\n";
     }
-    if (ans == 4)
-      cout<<"The sum of the nodes in your tree is"<<add(myRoot)<<"\n";
+    if (ans == 4) {
+      cout<<"The sum of the nodes in your tree is "<<add(myRoot)<<"\n";
+    }
     if (ans == 5) {
-      
+        cout << "Enter the key value: ";
+        cin >> val;
+        Node* node = findNode(myRoot, val);
+        if (node == NULL) {
+            cout << "Node with key " << val << " not found." << endl;
+        } 
+        else {
+            Node* next = Next(myRoot, node);
+            if (next == NULL) {
+                cout << "Node with key " << val << " has no successor." << endl;
+            } 
+            else {
+                cout << "Successor of node with key " << val << " is " << next->data << "." << endl;
+            }
+        }
     }
     if (ans == 6){
-      
+        cout << "Enter the values for x and y: ";
+        cin >> val >> val2;
+        Node *currentPtr = myRoot;
+        while (currentPtr != NULL) {
+            if (currentPtr->data > val) {
+                if (currentPtr->left != NULL)
+                    currentPtr = currentPtr->left;
+                else
+                    break;
+            }
+            else
+                currentPtr = currentPtr->right;
+        }
+        cout << "The elements between " << val << " and " << val2<<" is/are ";
+        while (currentPtr != NULL && currentPtr->data <= val2) {
+            cout << currentPtr->data << " ";
+            currentPtr = Next(myRoot, currentPtr);
+        }
+        cout << endl;
     }
     if (ans == 7){
-      
+        cout << "Enter the root value: ";
+        cin >> val;
+        Node *x = findNode(myRoot, val);
+        if (x == NULL) {
+            cout << "Element not found in the tree" << endl;
+        }
+        else {
+            cout << "Height of the tree with root " << val << " is " << ComputeHeight(x) << endl;
+        }
     }
     if (ans == 8){
-      
+        cout << "Enter the values for x and y: ";
+        cin >> val >> val2;
+        int sum = 0;
+        Node* currentPtr = myRoot;
+        while (currentPtr != NULL) {
+            if (currentPtr->data >= val && currentPtr->data <= val2) {
+                sum += currentPtr->data;
+            }
+            if (currentPtr->data < val) {
+                currentPtr = currentPtr->right;
+            } 
+            else if (currentPtr->data > val2) {
+                currentPtr = currentPtr->left;
+            } 
+            else {
+                Node* successor = Next(myRoot, currentPtr);
+                if (successor != NULL) {
+                    currentPtr = successor;
+                } 
+                else {
+                    break;
+                }
+            }
+        }
+        cout << "The sum of elements between " << val << " and " << val2 << " is " << sum << endl;
     }
     if (ans == 9) {
       // Print the resulting tree.
-      cout<<"Here is an inorder traversal of your tree: ";
+      cout<<"Here is an inorder traversal of your tree:";
       inorder(myRoot);
       cout<<"\n";
     }
